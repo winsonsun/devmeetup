@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Vuetify from 'vuetify'
 import App from './App'
-import * as firebase from 'firebase'
 import router from './router'
 import { store } from './store'
 import DateFilter from './filters/date'
@@ -28,19 +27,15 @@ new Vue({
   store,
   render: h => h(App),
   created () {
-    firebase.initializeApp({
-      apiKey: 'AIzaSyDN5_NHLo1AqUkuHqO_LiplM5LWPUeHuC8',
-      authDomain: 'startervue.firebaseapp.com',
-      databaseURL: 'https://startervue.firebaseio.com',
-      projectId: 'startervue',
-      storageBucket: 'gs://startervue.appspot.com'
+    this.$store.subscribe((mutation, state) => {
+      console.log(mutation.type)
+      console.log(mutation.payload)
+      console.log('----------------------------')
     })
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        this.$store.dispatch('autoSignIn', user)
-        this.$store.dispatch('fetchUserData')
-      }
-    })
-    this.$store.dispatch('loadMeetups')
+
+    // var loginInData = {email: 'winsonsun@gmail.com', password: '123456'}
+    // this.$store.dispatch('backendConnect', loginInData)
+  },
+  methods: {
   }
 })

@@ -7,15 +7,15 @@
             <v-layout row>
               <v-flex xs5 sm4 md3>
                 <v-card-media
-                  :src="meetup.imageUrl"
+                  :src="meetup.name"
                   height="130px"
                 ></v-card-media>
               </v-flex>
               <v-flex xs7 sm8 md9>
                 <v-card-title primary-title>
                   <div>
-                    <h5 class="white--text mb-0">{{ meetup.title }}</h5>
-                    <div>{{ meetup.date | date }}</div>
+                    <h5 class="white--text mb-0">{{ meetup.name }}</h5>
+                    <div>{{ meetup.name }}</div>
                   </div>
                 </v-card-title>
                 <v-card-actions>

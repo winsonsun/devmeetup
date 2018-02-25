@@ -14,7 +14,7 @@
       <v-flex xs12>
         <v-card>
           <v-card-title>
-            <h6 class="primary--text">{{ meetup.title }}</h6>
+            <h6 class="primary--text">{{ meetup.name }}</h6>
             <template v-if='userIsCreator'>
               <v-spacer></v-spacer>
               <app-edit-meetup-details-dialog :meetup="meetup"></app-edit-meetup-details-dialog>
@@ -25,7 +25,7 @@
             height="400px"
           ></v-card-media>
           <v-card-text>
-            <div class="info--text">{{ meetup.date | date }} - {{ meetup.location }}</div>
+            <div class="info--text">{{ meetup.price }} - PRICE</div>
             <div>
               <app-edit-meetup-date-dialog :meetup="meetup" v-if="userIsCreator"></app-edit-meetup-date-dialog>
               <app-edit-meetup-time-dialog :meetup="meetup" v-if="userIsCreator"></app-edit-meetup-time-dialog>
@@ -47,7 +47,9 @@
     props: ['id'],
     computed: {
       meetup () {
-        return this.$store.getters.loadedMeetup(this.id)
+        // debugger
+        var Meetup = this.$store.getters.loadedMeetup(this.id)
+        return Meetup
       },
       userIsAuthenticated () {
         return this.$store.getters.user !== null && this.$store.getters.user !== undefined

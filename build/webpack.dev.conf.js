@@ -31,5 +31,19 @@ module.exports = merge(baseWebpackConfig, {
       inject: true
     }),
     new FriendlyErrorsPlugin()
-  ]
+  ],
+  devServer: {
+    port: 8081,
+    contentBase: 'src/',
+    historyApiFallback: true,
+    proxyTable: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api' : ''
+        }
+      }
+    }
+  },
 })

@@ -1,8 +1,9 @@
-import * as firebase from 'firebase'
+import Axios from 'axios'
 
 export default {
   state: {
-    user: null
+    user: null,
+    jwt: null
   },
   mutations: {
     registerUserForMeetup (state, payload) {
@@ -19,14 +20,22 @@ export default {
       Reflect.deleteProperty(state.user.fbKeys, payload)
     },
     setUser (state, payload) {
+      // debugger
       state.user = payload
+    },
+    setJWT (state, payload) {
+      state.jwt = payload.token
     }
   },
   actions: {
+    loadMeetups ({commit, state}, payload) {
+      console.log('loadMeetups called inside of User')
+    },
     registerUserForMeetup ({commit, getters}, payload) {
       commit('setLoading', true)
-      const user = getters.user
-      firebase.database().ref('/users/' + user.id).child('/registrations/')
+      // const user = getters.user
+
+      /* firebase.database().ref('/users/' + user.id).child('/registrations/')
         .push(payload)
         .then(data => {
           commit('setLoading', false)
@@ -35,7 +44,7 @@ export default {
         .catch(error => {
           console.log('registerUserForMeetup action catch, ' + error)
           commit('setLoading', false)
-        })
+        }) */
     },
     unregisterUserFromMeetup ({commit, getters}, payload) {
       commit('setLoading', true)
@@ -43,9 +52,9 @@ export default {
       if (!user.fbKeys) {
         return
       }
-      const fbKey = user.fbKeys[payload]
+      // const fbKey = user.fbKeys[payload]
       console.log('unregisterUserFromMeetup action fbKey: ' + JSON.stringify(payload))
-      firebase.database().ref('/users/' + user.id + '/registrations/').child(fbKey)
+      /* firebase.database().ref('/users/' + user.id + '/registrations/').child(fbKey)
         .remove()
         .then(() => {
           commit('setLoading', false)
@@ -54,12 +63,44 @@ export default {
         .catch(error => {
           console.log(error)
           commit('setLoading', false)
-        })
+        }) */
     },
     signUserUp ({commit}, payload) {
       commit('setLoading', true)
       commit('clearError')
-      firebase.auth().createUserWithEmailAndPassword(payload.email, payload.password)
+
+      var axiosConfig = {
+        headers: {'Content-Type': 'application/json;charset=UTF-8'}
+      }
+
+      var userData = {
+        email: payload.email,
+        password: payload.password
+      }
+
+      debugger
+
+      Axios.post('http://localhost:3000/user/signup', userData, axiosConfig)
+      .then(function (response) {
+        // debugger
+        commit('setLoading', false)
+        const newUser = {
+          id: response.data.id,
+          email: response.data.email,
+          registeredMeetups: [],
+          fbKeys: {}
+        }
+        commit('setUser', newUser)
+        console.log('POST create user succeed! ' + response)
+      })
+      .catch(function (error) {
+        commit('setLoading', false)
+        commit('setError', error)
+        console.log(error)
+        console.log('POST create user failed: ' + error)
+      })
+
+      /* firebase.auth().createUserWithEmailAndPassword(payload.email, payload.password)
         .then(
           user => {
             commit('setLoading', false)
@@ -77,12 +118,41 @@ export default {
             commit('setError', error)
             console.log(error)
           }
-        )
+        ) */
     },
-    signUserIn ({commit}, payload) {
+    signUserIn (context, payload) {
+      const commit = context.commit
       commit('setLoading', true)
       commit('clearError')
-      firebase.auth().signInWithEmailAndPassword(payload.email, payload.password)
+
+      Axios.post('http://localhost:3000/user/login', payload)
+      .then(function (response) {
+        commit('setLoading', false)
+        /* const newToken = {
+          token: response.data.token
+        }
+        // commit('setJWT', newToken) */
+
+        const newUser = {
+          id: response.data.uid,
+          token: response.data.token,
+          registeredMeetups: [],
+          fbKeys: {}
+        }
+        commit('setUser', newUser)
+
+        // debugger
+        context.dispatch('loadMeetups')
+
+        console.log(response)
+      })
+      .catch(function (error) {
+        commit('setLoading', false)
+        commit('setError', error)
+        console.log(error)
+      })
+
+      /* firebase.auth().signInWithEmailAndPassword(payload.email, payload.password)
         .then(
           user => {
             commit('setLoading', false)
@@ -100,14 +170,40 @@ export default {
             commit('setError', error)
             console.log(error)
           }
-        )
+        ) */
     },
-    autoSignIn ({commit}, payload) {
+    backendConnect (context, payload) {
+      var commit = context.commit
+      // var state = context.state
+      commit('setLoading', true)
+      commit('clearError')
+
+      // debugger
+
+      Axios.post('http://localhost:3000/user/login', payload)
+      .then(function (response) {
+        commit('setLoading', false)
+        const newToken = {
+          token: response.data.token
+        }
+        commit('setJWT', newToken)
+        // debugger
+        context.dispatch('loadMeetups')
+
+        console.log(response)
+      })
+      .catch(function (error) {
+        commit('setLoading', false)
+        commit('setError', error)
+        console.log(error)
+      })
+    },
+    /* autoSignIn ({commit}, payload) {
       commit('setUser', {id: payload.uid, registeredMeetups: [], fbKeys: {}})
-    },
+    }, */
     fetchUserData ({commit, getters}) {
       commit('setLoading', true)
-      firebase.database().ref('/users/' + getters.user.id + '/registrations/').once('value')
+      /* firebase.database().ref('/users/' + getters.user.id + '/registrations/').once('value')
         .then(data => {
           const dataPairs = data.val()
           let registeredMeetups = []
@@ -130,16 +226,19 @@ export default {
         .catch(error => {
           console.log(error)
           commit('setLoading', false)
-        })
+        }) */
     },
     logout ({commit}) {
-      firebase.auth().signOut()
+      // firebase.auth().signOut()
       commit('setUser', null)
     }
   },
   getters: {
     user (state) {
       return state.user
+    },
+    jwt (state) {
+      return state.jwt
     }
   }
 }

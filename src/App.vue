@@ -47,6 +47,12 @@
           Logout
 
         </v-btn>
+        <v-btn
+          flat
+          @click="onBackendConnect">
+          <v-icon left dark>exit_to_app</v-icon>
+          Test Mongo
+        </v-btn>
       </v-toolbar-items>
     </v-toolbar>
     <main>
@@ -56,6 +62,7 @@
 </template>
 
 <script>
+  // import Axios from 'axios'
   export default {
     data () {
       return {
@@ -84,7 +91,11 @@
     methods: {
       onLogout () {
         this.$store.dispatch('logout')
+      },
+      onBackendConnect () {
+        console.log('onBackendConnect called')
       }
+
     }
   }
 </script>

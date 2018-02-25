@@ -1,4 +1,4 @@
-import * as firebase from 'firebase'
+import Axios from 'axios'
 
 export default {
   state: {
@@ -6,7 +6,7 @@ export default {
       {
         imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/47/New_york_times_square-terabass.jpg',
         id: 'afajfjadfaadfa323',
-        title: 'Meetup in New York',
+        name: 'Meetup in New York',
         date: new Date(),
         location: 'New York',
         description: 'New York, New York!'
@@ -14,7 +14,7 @@ export default {
       {
         imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Paris_-_Blick_vom_gro%C3%9Fen_Triumphbogen.jpg',
         id: 'aadsfhbkhlk1241',
-        title: 'Meetup in Paris',
+        name: 'Meetup in Paris',
         date: new Date(),
         location: 'Paris',
         description: 'It\'s Paris!'
@@ -23,9 +23,11 @@ export default {
   },
   mutations: {
     setLoadedMeetups (state, payload) {
+      // debugger
       state.loadedMeetups = payload
     },
     createMeetup (state, payload) {
+      // debugger
       state.loadedMeetups.push(payload)
     },
     updateMeetup (state, payload) {
@@ -45,72 +47,79 @@ export default {
   },
   actions: {
     loadMeetups ({commit}) {
+      // debugger
       commit('setLoading', true)
-      firebase.database().ref('meetups').once('value')
-        .then((data) => {
-          const meetups = []
-          const obj = data.val()
-          for (let key in obj) {
-            meetups.push({
-              id: key,
-              title: obj[key].title,
-              description: obj[key].description,
-              imageUrl: obj[key].imageUrl,
-              location: obj[key].location,
-              date: obj[key].date,
-              creatorId: obj[key].creatorId
-            })
-          }
-          commit('setLoadedMeetups', meetups)
-          commit('setLoading', false)
-        })
-        .catch(
-          (error) => {
-            console.log(error)
-            commit('setLoading', false)
-          }
-        )
-    },
-    createMeetup ({commit, getters}, payload) {
-      const meetup = {
-        title: payload.title,
-        location: payload.location,
-        description: payload.description,
-        date: payload.date.toISOString(),
-        creatorId: getters.user.id
+
+      var jwt = this.getters.user.token
+      var config = {
+        headers: {'Authorization': 'Bearer ' + jwt}
       }
-      let imageUrl
-      let key
-      firebase.database().ref('meetups').push(meetup)
-        .then((data) => {
-          key = data.key
-          /* commit('createMeetup', {
-            ...meetup,
-            id: key
-           }) */
-          return key
-        })
-        .then(key => {
-          const filename = payload.image.name
-          const ext = filename.slice(filename.lastIndexOf('.'))
-          return firebase.storage().ref('meetups/' + key + '.' + ext).put(payload.image)
-        })
-        .then(fileData => {
-          imageUrl = fileData.metadata.downloadURLs[0]
-          console.log('imageURL is: ' + imageUrl)
-          return firebase.database().ref('meetups').child(key).update({imageUrl: imageUrl})
-        })
-        .then(() => {
-          commit('createMeetup', {
-            ...meetup,
-            imageUrl: imageUrl,
-            id: key
+
+      debugger
+
+      Axios.get('http://localhost:3000/products', config)
+      .then(function (data) {
+        // debugger
+        const meetups = []
+        const obj = data.data.products
+        obj.forEach((o) => {
+          // debugger
+          meetups.push({
+            id: o._id,
+            name: o.name,
+            price: o.price,
+            imageUrl: 'http://localhost:3000/' + o.productImage
           })
         })
-        .catch((error) => {
-          console.log(error)
-        })
-      // Reach out to firebase and store it
+
+        commit('setLoadedMeetups', meetups)
+        commit('setLoading', false)
+        console.log(data)
+      })
+      .catch(function (error) {
+        // debugger
+        commit('setLoading', false)
+        commit('setError', error)
+        console.log(error)
+      })
+    },
+    createMeetup ({commit, getters}, payload) {
+      // debugger
+      const product = {
+        name: payload.name,
+        price: parseInt(payload.price),
+        productImage: payload.image
+      }
+      console.log(product.name)
+
+      /* var axiosConfig = {
+        'Content-Type': 'application/json;charset=UTF-8',
+        headers: {'Authorization': 'Bearer ' + this.getters.user.token}
+      } */
+
+      var axiosConfig = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        headers: {'Authorization': 'Bearer ' + this.getters.user.token}
+      }
+
+      const formData = new FormData()
+      formData.append('file', this.image)
+      formData.append('name', product.name)
+      formData.append('price', product.price)
+      formData.append('productImage', payload.image)
+
+      debugger
+
+      const url = 'http://localhost:3000/products'
+      Axios.post(url, formData, axiosConfig)
+      .then(function (response) {
+        // handle success
+        console.log('POST product succeed' + response)
+      })
+      .catch(function (response) {
+        // handle error
+        console.log('POST product failed' + response)
+      })
     },
     updateMeetupData ({commit}, payload) {
       commit('setLoading', false)
@@ -124,24 +133,17 @@ export default {
       if (payload.date) {
         updateObj.date = payload.date
       }
-      firebase.database().ref('meetups').child(payload.id).update(updateObj)
-        .then(() => {
-          commit('setLoading', false)
-          commit('updateMeetup', payload)
-        })
-        .catch(error => {
-          console.log(error)
-          commit('setLoading', false)
-        })
     }
   },
   getters: {
     loadedMeetups (state) {
-      return state.loadedMeetups.sort((meetupA, meetupB) => {
-        return meetupA.date > meetupB.date
-      })
+      // return state.loadedMeetups.sort((meetupA, meetupB) => {
+      //   return meetupA.date > meetupB.date
+      // })
+      return state.loadedMeetups
     },
     featuredMeetups (state, getters) {
+      // debugger
       return getters.loadedMeetups.slice(0, 5)
     },
     loadedMeetup (state) {
